@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fahc-exporter
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: fahc-exporter
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fahc-exporter
+spec:
+  selector:
+    matchLabels:
+      app: fahc-exporter
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fahc-exporter
+    spec:
+      containers:
+        - name: fahc-exporter
+          image: ghcr.io/ebiiim/fah-collector-exporter:1.0.0
+          command:
+            - "./main"
+            - "http://fahc/all"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "300m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
