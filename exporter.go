@@ -25,6 +25,7 @@ type Exporter struct {
 	stateDownloadDesc   *prometheus.Desc
 	stateRunningDesc    *prometheus.Desc
 	stateReadyDesc      *prometheus.Desc
+	stateSendDesc       *prometheus.Desc
 	stateUnexpectedDesc *prometheus.Desc
 }
 
@@ -56,6 +57,7 @@ func NewExporter(url string, insecure bool) *Exporter {
 	e.stateDownloadDesc = descState("download", "FAH current state is DOWNLOAD")
 	e.stateRunningDesc = descState("running", "FAH current state is RUNNING")
 	e.stateReadyDesc = descState("ready", "FAH current state is READY")
+	e.stateSendDesc = descState("send", "FAH current state is SEND")
 	e.stateUnexpectedDesc = descState("unexpected", "FAH returned an unexpected state")
 
 	return &e
@@ -66,6 +68,7 @@ func (e Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.stateDownloadDesc
 	ch <- e.stateRunningDesc
 	ch <- e.stateReadyDesc
+	ch <- e.stateSendDesc
 	ch <- e.stateUnexpectedDesc
 }
 
@@ -121,6 +124,7 @@ func (e Exporter) collectInstance(ch chan<- prometheus.Metric, labelPod, labelNo
 		isDownload   float64
 		isRunning    float64
 		isReady      float64
+		isSend       float64
 		isUnexpected float64
 	)
 	switch state {
@@ -130,6 +134,8 @@ func (e Exporter) collectInstance(ch chan<- prometheus.Metric, labelPod, labelNo
 		isRunning = 1
 	case "READY":
 		isReady = 1
+	case "SEND":
+		isSend = 1
 	default:
 		isUnexpected = 1
 	}
@@ -149,6 +155,12 @@ func (e Exporter) collectInstance(ch chan<- prometheus.Metric, labelPod, labelNo
 		e.stateReadyDesc,
 		prometheus.CounterValue,
 		isReady,
+		labelPod, labelNode,
+	)
+	ch <- prometheus.MustNewConstMetric(
+		e.stateSendDesc,
+		prometheus.CounterValue,
+		isSend,
 		labelPod, labelNode,
 	)
 	ch <- prometheus.MustNewConstMetric(
